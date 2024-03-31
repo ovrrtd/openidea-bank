@@ -20,3 +20,4 @@
 # Go workspace file
 go.work
 cmd/main
+ap-southeast-1-bundle.pem

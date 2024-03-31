@@ -2,19 +2,32 @@ package middleware
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"os"
 	"runtime"
+	"strconv"
 	"strings"
 	"time"
 
+	"github.com/gorilla/mux"
 	"github.com/ovrrtd/openidea-bank/internal/helper/common"
 	"github.com/ovrrtd/openidea-bank/internal/helper/errorer"
 	httpHelper "github.com/ovrrtd/openidea-bank/internal/helper/http"
 	"github.com/ovrrtd/openidea-bank/internal/helper/jwt"
 	"github.com/ovrrtd/openidea-bank/internal/service"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/rs/zerolog"
+)
+
+var (
+	requestHistogram = promauto.NewHistogramVec(prometheus.HistogramOpts{
+		Name:    "http_request_histogram",
+		Help:    "Histogram of server request duration.",
+		Buckets: prometheus.LinearBuckets(1, 1, 10), // Adjust bucket sizes as needed
+	}, []string{"path", "method", "status"})
 )
 
 type middleware struct {
@@ -26,6 +39,7 @@ type Middleware interface {
 	Authentication(isThrowError bool) func(next http.HandlerFunc) http.HandlerFunc
 	LoggingMiddleware(h http.Handler) http.Handler
 	RemoveTrailingSlash(h http.Handler) http.Handler
+	NewRoute(router *mux.Router, method string, path string, handler http.HandlerFunc)
 }
 
 func New(logger zerolog.Logger, service service.Service) Middleware {
@@ -129,6 +143,27 @@ func (rw *responseWriter) WriteHeader(code int) {
 	rw.status = code
 	rw.ResponseWriter.WriteHeader(code)
 	rw.wroteHeader = true
+}
 
-	return
+func (m *middleware) NewRoute(router *mux.Router, method string, path string, handler http.HandlerFunc) {
+	router.HandleFunc(path, m.wrapHandlerWithMetrics(path, method, handler)).Methods(method)
+}
+
+func (m *middleware) wrapHandlerWithMetrics(path string, method string, handler http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		startTime := time.Now()
+		// wrap the response writer
+		wrapped := m.wrapResponseWriter(w)
+
+		// Execute the actual handler
+		handler(wrapped, r)
+
+		// Regardless of whether an error occurred, record the metrics
+		duration := time.Since(startTime).Milliseconds()
+
+		// Assuming you have a function similar to requestHistogram
+		// Replace it with your actual implementation
+		fmt.Println("wrapped.status", wrapped.status)
+		requestHistogram.WithLabelValues(path, method, strconv.Itoa(wrapped.status)).Observe(float64(duration))
+	}
 }

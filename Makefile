@@ -1,11 +1,11 @@
 # to run server
 .PHONY: runServerLinux
 runServerLinux:
-	cd cmd && GOOS=linux GOARCH=amd64 go build -o main && ./main
+	GOOS=linux GOARCH=amd64 go build -o main && ./main
 
 .PHONY: runServerMac
 runServerMac:
-	cd cmd && go build -o main && ./main
+	go build -o main && ./main
 
 .PHONY: migrateUp
 migrateUp:
@@ -19,7 +19,7 @@ migrateDown:
 
 .PHONY: buildProd
 buildProd:
-	cd cmd && GOOS=linux GOARCH=amd64 go build -o main_nu
+	GOOS=linux GOARCH=amd64 go build -o main_nu
 
 .PHONY: scpProd
 scpProd:

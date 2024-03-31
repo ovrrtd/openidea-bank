@@ -14,7 +14,7 @@ func (c ctxKey) ToString() string {
 }
 
 type UserClaims struct {
-	Id int64 `json:"id"`
+	Id string `json:"id"`
 	jwt.RegisteredClaims
 }
 

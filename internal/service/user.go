@@ -126,16 +126,14 @@ func (s *service) Login(ctx context.Context, payload request.Login) (*response.L
 	}, http.StatusOK, nil
 }
 
-func (s *service) GetUserByID(ctx context.Context, id int64) (*response.User, int, error) {
+func (s *service) GetUserByID(ctx context.Context, id string) (*response.User, int, error) {
 	user, code, err := s.userRepo.FindByID(ctx, id)
 	if err != nil {
 		return nil, code, err
 	}
 	return &response.User{
-		ID:        user.ID,
-		Name:      user.Name,
-		Email:     user.Email,
-		CreatedAt: user.CreatedAt,
-		UpdatedAt: user.UpdatedAt,
+		ID:    user.ID,
+		Name:  user.Name,
+		Email: user.Email,
 	}, code, nil
 }
